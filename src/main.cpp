@@ -22,18 +22,27 @@ void printString(const char *string)
 
 BLEServer *pServer = NULL;
 BLECharacteristic *pCharacteristic = NULL;
+BLEAdvertising *pAdvertising = NULL;
+uint16_t activeConnId = ESP_GATT_IF_NONE;
+bool isAdvertising = false;
 
 class MyServerCallbacks : public BLEServerCallbacks
 {
   void onConnect(BLEServer *pServer)
   {
-    printString("connect");
+    printString("connected");
+    isAdvertising = false;
+    activeConnId = pServer->getConnId();
+    pAdvertising->stop();
   };
 
   void onDisconnect(BLEServer *pServer)
   {
     printString("disconnect");
     delay(100);
+    // どうせシャットダウンするので初期化は行わない
+    // activeConnId = ESP_GATT_IF_NONE;
+    // pAdvertising->start();
     M5.shutdown(1);
   }
 };
@@ -78,17 +87,36 @@ void setup()
   pCharacteristic->addDescriptor(new BLE2902());
 
   pService->start();
-  BLEAdvertising *pAdvertising = pServer->getAdvertising();
-  pAdvertising->start();
+  pAdvertising = pServer->getAdvertising();
+  printString("BLE advertising ready! to start advertising, Please push the right side button.");
 }
 
 void loop()
 {
-  if (M5.BtnP.wasPressed())
+  if (M5.BtnP.wasPressed() && pAdvertising != nullptr)
   {
-    printString("bye...");
-    delay(100);
-    M5.shutdown(1);
+    // アドバタイズ中ではない&&アプリが接続されていない状態のみアドバタイズを再開できるようにする
+    if (isAdvertising == false && activeConnId == ESP_GATT_IF_NONE)
+    {
+      pAdvertising->start();
+      isAdvertising = true;
+      printString("Advertising started! to stop advertising, Please push the right side button.");
+    }
+    // 接続済みのアプリがない場合のみこの処理を実行できるようにしたい
+    // （そもそもアプリが接続された場合アドバタイズは勝手に切れる仕様）
+    else if (activeConnId == ESP_GATT_IF_NONE)
+    {
+      pAdvertising->stop();
+      isAdvertising = false;
+      printString("Advertising stopped. to re-start advertising, Please push the right side button.");
+    }
+    // アプリが接続されている場合、右ボタンを押したときは再起動する
+    else
+    {
+      printString("rebooting...");
+      delay(100);
+      M5.shutdown(1);
+    }
   }
   M5.update();
   delay(100);
