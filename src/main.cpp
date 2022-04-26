@@ -39,7 +39,7 @@ class MyServerCallbacks : public BLEServerCallbacks
   void onDisconnect(BLEServer *pServer)
   {
     printString("disconnect");
-    delay(100);
+    delay(1000);
     // どうせシャットダウンするので初期化は行わない
     // activeConnId = ESP_GATT_IF_NONE;
     // pAdvertising->start();
@@ -114,10 +114,10 @@ void loop()
     else
     {
       printString("rebooting...");
-      delay(100);
+      delay(1000);
       M5.shutdown(1);
     }
   }
   M5.update();
-  delay(100);
+  delay(1000);
 }
