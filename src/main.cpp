@@ -7,15 +7,6 @@
 
 M5EPD_Canvas canvas(&M5.EPD);
 
-void printString(const char *string)
-{
-  canvas.deleteCanvas();
-  canvas.createCanvas(540, 960);
-  canvas.setTextSize(5);
-  canvas.print(string);
-  canvas.pushCanvas(0, 0, UPDATE_MODE_DU4);
-}
-
 #define SERVICE_UUID "95820a99-7667-45c4-a48e-4fc262955aad"
 #define CHARACTERISTIC_UUID "9bccfcd1-492b-4d83-987d-6ef8b0d0e0f5"
 #define SIGNAL_ACK "A"
@@ -25,6 +16,20 @@ BLECharacteristic *pCharacteristic = NULL;
 BLEAdvertising *pAdvertising = NULL;
 uint16_t activeConnId = ESP_GATT_IF_NONE;
 bool isAdvertising = false;
+
+void printString(const char *string)
+{
+  canvas.deleteCanvas();
+  canvas.createCanvas(540, 960);
+  canvas.setTextSize(5);
+  canvas.print(string);
+  canvas.pushCanvas(0, 0, UPDATE_MODE_DU4);
+  // 接続中はアプデを禁止しているので、表示が変わったときに随時アプデしている
+  if (activeConnId != ESP_GATT_IF_NONE)
+  {
+    M5.update();
+  }
+}
 
 class MyServerCallbacks : public BLEServerCallbacks
 {
@@ -39,7 +44,7 @@ class MyServerCallbacks : public BLEServerCallbacks
   void onDisconnect(BLEServer *pServer)
   {
     printString("disconnect");
-    delay(1000);
+    delay(100);
     // どうせシャットダウンするので初期化は行わない
     // activeConnId = ESP_GATT_IF_NONE;
     // pAdvertising->start();
@@ -89,6 +94,10 @@ void setup()
   pService->start();
   pAdvertising = pServer->getAdvertising();
   printString("BLE advertising ready! to start advertising, Please push the right side button.");
+
+  // TOUCH_INT
+  esp_sleep_enable_ext0_wakeup(GPIO_NUM_36, LOW);
+  esp_light_sleep_start();
 }
 
 void loop()
@@ -110,14 +119,11 @@ void loop()
       isAdvertising = false;
       printString("Advertising stopped. to re-start advertising, Please push the right side button.");
     }
-    // アプリが接続されている場合、右ボタンを押したときは再起動する
-    else
-    {
-      printString("rebooting...");
-      delay(1000);
-      M5.shutdown(1);
-    }
   }
-  M5.update();
-  delay(1000);
+  // 一度接続したら切断するまで操作を禁止する(アプデしない)
+  if (isAdvertising == false || activeConnId == ESP_GATT_IF_NONE)
+  {
+    M5.update();
+    delay(1000);
+  }
 }
