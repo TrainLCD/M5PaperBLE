@@ -65,14 +65,13 @@ class MyCallbacks : public BLECharacteristicCallbacks
 
 void setup()
 {
-  M5.begin(false, false, false, false, false);
+  M5.begin();
   M5.EPD.SetRotation(90);
   M5.EPD.Clear(true);
   M5.RTC.begin();
-  WiFi.disconnect();
   WiFi.mode(WIFI_OFF);
 
-  printString("BLE Ready!");
+  printString("WELCOME!");
 
   BLEDevice::init("m5-paper");
   BLEServer *pServer = BLEDevice::createServer();
