@@ -24,11 +24,7 @@ void printString(const char *string)
   canvas.setTextSize(5);
   canvas.print(string);
   canvas.pushCanvas(0, 0, UPDATE_MODE_DU4);
-  // 接続中はアプデを禁止しているので、表示が変わったときに随時アプデしている
-  if (activeConnId != ESP_GATT_IF_NONE)
-  {
-    M5.update();
-  }
+  M5.update();
 }
 
 class MyServerCallbacks : public BLEServerCallbacks
@@ -95,36 +91,22 @@ void setup()
   pAdvertising = pServer->getAdvertising();
   printString("BLE advertising ready! to start advertising, Please push the right side button.");
 
-  // 右の釦を上に上げる
-  esp_sleep_enable_ext0_wakeup(GPIO_NUM_37, LOW);
+  // 右の釦を押す
+  esp_sleep_enable_ext0_wakeup(GPIO_NUM_38, LOW);
+  // 右の釦を押すまでは寝てる
   esp_light_sleep_start();
 }
 
 void loop()
 {
-  if (M5.BtnP.wasPressed() && pAdvertising != nullptr)
+  if (pAdvertising != nullptr)
   {
     // アドバタイズ中ではない&&アプリが接続されていない状態のみアドバタイズを再開できるようにする
     if (isAdvertising == false && activeConnId == ESP_GATT_IF_NONE)
     {
       pAdvertising->start();
       isAdvertising = true;
-      printString("Advertising started! to stop advertising, Please push the right side button.");
+      printString("Advertising started! to stop advertising, Please reset the power supply.");
     }
-    // 接続済みのアプリがない場合のみこの処理を実行できるようにしたい
-    // （そもそもアプリが接続された場合アドバタイズは勝手に切れる仕様）
-    else if (activeConnId == ESP_GATT_IF_NONE)
-    {
-      pAdvertising->stop();
-      isAdvertising = false;
-      printString("Advertising stopped. to re-start advertising, Please push the right side button.");
-      esp_light_sleep_start();
-    }
-  }
-  // 一度接続したら切断するまで操作を禁止する(アプデしない)
-  if (isAdvertising == false || activeConnId == ESP_GATT_IF_NONE)
-  {
-    M5.update();
-    delay(1000);
   }
 }
