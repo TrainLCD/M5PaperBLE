@@ -7,6 +7,7 @@
 
 M5EPD_Canvas canvas(&M5.EPD);
 
+#define BLE_DEVICE_NAME "da5f6dec"
 #define SERVICE_UUID "95820a99-7667-45c4-a48e-4fc262955aad"
 #define CHARACTERISTIC_UUID "9bccfcd1-492b-4d83-987d-6ef8b0d0e0f5"
 #define SIGNAL_ACK "A"
@@ -73,7 +74,7 @@ void setup()
 
   printString("WELCOME!");
 
-  BLEDevice::init("m5-paper");
+  BLEDevice::init(BLE_DEVICE_NAME);
   BLEServer *pServer = BLEDevice::createServer();
   pServer->setCallbacks(new MyServerCallbacks());
   BLEService *pService = pServer->createService(SERVICE_UUID);
