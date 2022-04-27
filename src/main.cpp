@@ -95,8 +95,8 @@ void setup()
   pAdvertising = pServer->getAdvertising();
   printString("BLE advertising ready! to start advertising, Please push the right side button.");
 
-  // TOUCH_INT
-  esp_sleep_enable_ext0_wakeup(GPIO_NUM_36, LOW);
+  // 右の釦を上に上げる
+  esp_sleep_enable_ext0_wakeup(GPIO_NUM_37, LOW);
   esp_light_sleep_start();
 }
 
@@ -118,6 +118,7 @@ void loop()
       pAdvertising->stop();
       isAdvertising = false;
       printString("Advertising stopped. to re-start advertising, Please push the right side button.");
+      esp_light_sleep_start();
     }
   }
   // 一度接続したら切断するまで操作を禁止する(アプデしない)
