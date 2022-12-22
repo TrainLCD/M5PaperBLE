@@ -12,6 +12,8 @@ M5EPD_Canvas canvas(&M5.EPD);
 #define CHARACTERISTIC_UUID "9bccfcd1-492b-4d83-987d-6ef8b0d0e0f5"
 #define SIGNAL_ACK "A"
 
+int wakingMsec = 0;
+
 BLEServer *pServer = NULL;
 BLECharacteristic *pCharacteristic = NULL;
 BLEAdvertising *pAdvertising = NULL;
@@ -24,7 +26,7 @@ void printString(const char *string)
   canvas.createCanvas(540, 960);
   canvas.setTextSize(5);
   canvas.print(string);
-  canvas.pushCanvas(0, 0, UPDATE_MODE_DU4);
+  canvas.pushCanvas(0, 0, UPDATE_MODE_A2);
   M5.update();
 }
 
@@ -53,7 +55,6 @@ class MyCallbacks : public BLECharacteristicCallbacks
 {
   void onRead(BLECharacteristic *pCharacteristic)
   {
-    printString("read");
     pCharacteristic->setValue(SIGNAL_ACK);
   }
 
@@ -64,6 +65,14 @@ class MyCallbacks : public BLECharacteristicCallbacks
   }
 };
 
+void sleepDeeply()
+{
+  printString("I'm sleeping deeply. For restart this device, Please press the right button!");
+  delay(500);
+  // 右の釦を押すまでは寝てる
+  esp_deep_sleep_start();
+}
+
 void setup()
 {
   M5.begin();
@@ -71,8 +80,6 @@ void setup()
   M5.EPD.Clear(true);
   M5.RTC.begin();
   WiFi.mode(WIFI_OFF);
-
-  printString("WELCOME!");
 
   BLEDevice::init(BLE_DEVICE_NAME);
   BLEServer *pServer = BLEDevice::createServer();
@@ -89,24 +96,44 @@ void setup()
 
   pService->start();
   pAdvertising = pServer->getAdvertising();
-  printString("BLE advertising ready! to start advertising, Please push the right side button.");
+  printString("BLE advertising ready! to start advertising, Please push the right side button. This device will be sleeped deeply within 30s.");
 
-  // 右の釦を押す
+  // 右の釦を押すと起きる
   esp_sleep_enable_ext0_wakeup(GPIO_NUM_38, LOW);
-  // 右の釦を押すまでは寝てる
-  esp_light_sleep_start();
 }
 
 void loop()
 {
-  if (pAdvertising != nullptr)
+  wakingMsec = wakingMsec + 100;
+
+  // 起きてる時に釦が3秒間押されたら寝る
+  if (M5.BtnP.pressedFor(3000))
   {
-    // アドバタイズ中ではない&&アプリが接続されていない状態のみアドバタイズを再開できるようにする
+    sleepDeeply();
+  }
+
+  if (M5.BtnP.wasPressed())
+  {
+    // アドバタイズ中ではない&&アプリが接続されていない状態のみアドバタイズを開始できるようにする
     if (isAdvertising == false && activeConnId == ESP_GATT_IF_NONE)
     {
-      pAdvertising->start();
       isAdvertising = true;
-      printString("Advertising started! to stop advertising, Please reset the power supply.");
+      wakingMsec = 0;
+      pAdvertising->start();
+      printString("Advertising started! to stop advertising, Please hold the right button 3s!");
     }
   }
+
+  // アドバタイズ実施なし無接続で30秒経過 or アドバタイズ実施しても無接続のまま1分経過したら爆睡する
+  if (activeConnId == ESP_GATT_IF_NONE)
+  {
+    if ((isAdvertising == false && wakingMsec == 30 * 1000) ||
+        (isAdvertising == true && wakingMsec == 60 * 1000))
+    {
+      sleepDeeply();
+    }
+  }
+
+  M5.update();
+  delay(100);
 }
