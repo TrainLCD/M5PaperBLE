@@ -32,7 +32,7 @@ void printString(const char *string)
 
 void sleepDeeply()
 {
-  printString("I'm sleeping deeply. For restart this device, Please press the right button!");
+  printString("I'm sleeping deeply. For start this device, Please press right side button!");
   delay(500);
   // 右の釦を押すまでは寝てる
   esp_deep_sleep_start();
@@ -42,7 +42,6 @@ class MyServerCallbacks : public BLEServerCallbacks
 {
   void onConnect(BLEServer *pServer)
   {
-    printString("connected");
     isAdvertising = false;
     activeConnId = pServer->getConnId();
     pAdvertising->stop();
@@ -50,7 +49,6 @@ class MyServerCallbacks : public BLEServerCallbacks
 
   void onDisconnect(BLEServer *pServer)
   {
-    printString("disconnect");
     sleepDeeply();
   }
 };
@@ -92,7 +90,7 @@ void setup()
 
   pService->start();
   pAdvertising = pServer->getAdvertising();
-  printString("BLE advertising ready! to start advertising, Please push the right side button. This device will be sleeped deeply within 30s.");
+  printString("BLE advertising ready! to start advertising, Please push right side button. This device will be sleeping deeply within 30sec.");
 
   // 右の釦を押すと起きる
   esp_sleep_enable_ext0_wakeup(GPIO_NUM_38, LOW);
@@ -116,7 +114,7 @@ void loop()
       isAdvertising = true;
       wakingMsec = 0;
       pAdvertising->start();
-      printString("Advertising started! to stop advertising, Please hold the right button 3s!");
+      printString("BLE advertising started! to stop advertising, Please hold right side button 3s! Also, this device will be sleeping deeply within 1min.");
     }
   }
 
