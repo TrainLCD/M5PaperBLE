@@ -30,6 +30,14 @@ void printString(const char *string)
   M5.update();
 }
 
+void sleepDeeply()
+{
+  printString("I'm sleeping deeply. For restart this device, Please press the right button!");
+  delay(500);
+  // 右の釦を押すまでは寝てる
+  esp_deep_sleep_start();
+}
+
 class MyServerCallbacks : public BLEServerCallbacks
 {
   void onConnect(BLEServer *pServer)
@@ -43,11 +51,7 @@ class MyServerCallbacks : public BLEServerCallbacks
   void onDisconnect(BLEServer *pServer)
   {
     printString("disconnect");
-    delay(100);
-    // どうせシャットダウンするので初期化は行わない
-    // activeConnId = ESP_GATT_IF_NONE;
-    // pAdvertising->start();
-    M5.shutdown(1);
+    sleepDeeply();
   }
 };
 
@@ -64,14 +68,6 @@ class MyCallbacks : public BLECharacteristicCallbacks
     printString(value.c_str());
   }
 };
-
-void sleepDeeply()
-{
-  printString("I'm sleeping deeply. For restart this device, Please press the right button!");
-  delay(500);
-  // 右の釦を押すまでは寝てる
-  esp_deep_sleep_start();
-}
 
 void setup()
 {
