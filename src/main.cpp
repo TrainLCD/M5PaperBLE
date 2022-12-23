@@ -22,12 +22,14 @@ bool isAdvertising = false;
 
 void printString(const char *string)
 {
+  M5.EPD.Active();
   canvas.deleteCanvas();
   canvas.createCanvas(540, 960);
   canvas.setTextSize(5);
   canvas.print(string);
-  canvas.pushCanvas(0, 0, UPDATE_MODE_A2);
+  canvas.pushCanvas(0, 0, UPDATE_MODE_DU4);
   M5.update();
+  M5.EPD.Sleep();
 }
 
 void sleepDeeply()
@@ -69,8 +71,9 @@ class MyCallbacks : public BLECharacteristicCallbacks
 
 void setup()
 {
-  M5.begin();
+  M5.begin(false, false, false, false, false);
   M5.EPD.SetRotation(90);
+  M5.TP.SetRotation(90);
   M5.EPD.Clear(true);
   M5.RTC.begin();
   WiFi.mode(WIFI_OFF);
