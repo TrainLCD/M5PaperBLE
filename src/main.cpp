@@ -22,14 +22,12 @@ bool isAdvertising = false;
 
 void printString(const char *string)
 {
-  M5.EPD.Active();
   canvas.deleteCanvas();
   canvas.createCanvas(540, 960);
   canvas.setTextSize(5);
   canvas.print(string);
   canvas.pushCanvas(0, 0, UPDATE_MODE_DU4);
   M5.update();
-  M5.EPD.Sleep();
 }
 
 void sleepDeeply()
